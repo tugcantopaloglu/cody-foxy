@@ -36,3 +36,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if not token:
         return None
     return decode_token(token)
+
+
+async def require_auth(token: str = Depends(oauth2_scheme)):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return decode_token(token)

@@ -1,10 +1,11 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
 
 
 class Settings(BaseSettings):
     APP_NAME: str = "Cody Foxy"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = "2.0.0"
     DEBUG: bool = False
     
     DATABASE_URL: str = "postgresql+asyncpg://cody:cody@localhost:5432/codyfoxy"
@@ -17,13 +18,26 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
     GITHUB_REDIRECT_URI: str = "http://localhost:3000/auth/github/callback"
+    GITHUB_APP_ID: str = ""
+    GITHUB_APP_PRIVATE_KEY: str = ""
+    GITHUB_WEBHOOK_SECRET: str = ""
     
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     AI_PROVIDER: str = "openai"
+    AI_MODEL: str = "gpt-4-turbo-preview"
     
     SCAN_TIMEOUT: int = 300
-    MAX_FILE_SIZE: int = 10485760
+    MAX_FILE_SIZE: int = 52428800
+    MAX_CONCURRENT_SCANS: int = 5
+    MAX_SCAN_QUEUE_SIZE: int = 100
+    
+    RATE_LIMIT_REQUESTS: int = 100
+    RATE_LIMIT_WINDOW: int = 60
+    
+    CORS_ORIGINS: str = "http://localhost:3000,https://codyfoxy.dev"
+    
+    SENTRY_DSN: Optional[str] = None
     
     class Config:
         env_file = ".env"
