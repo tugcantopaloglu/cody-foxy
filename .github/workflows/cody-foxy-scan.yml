@@ -1,0 +1,90 @@
+name: Cody Foxy Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      enable_ai:
+        description: 'Enable AI analysis'
+        type: boolean
+        default: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Semgrep and Bandit
+        run: pip install semgrep bandit
+
+      - name: Run Semgrep scan
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/secrets \
+            --config p/owasp-top-ten \
+            --sarif \
+            --output results.sarif \
+            . || true
+
+      - name: Run Bandit scan (Python)
+        run: |
+          bandit -r . -f sarif -o bandit.sarif --exit-zero || true
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+        continue-on-error: true
+
+      - name: Upload Bandit SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit.sarif
+          category: bandit
+        continue-on-error: true
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let sarif;
+            try {
+              sarif = JSON.parse(fs.readFileSync('results.sarif', 'utf8'));
+            } catch (e) {
+              return;
+            }
+            
+            const results = sarif.runs?.[0]?.results || [];
+            const critical = results.filter(r => r.level === 'error').length;
+            const warnings = results.filter(r => r.level === 'warning').length;
+            
+            const body = `## 🦊 Cody Foxy Security Scan Results
+            
+            | Severity | Count |
+            |----------|-------|
+            | 🔴 Critical/High | ${critical} |
+            | 🟡 Medium | ${warnings} |
+            | 🟢 Low | ${results.length - critical - warnings} |
+            
+            **Total Issues:** ${results.length}
+            
+            View full results in the Security tab.`;
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
