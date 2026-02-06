@@ -65,17 +65,24 @@ def test_scan_response_model():
     
     data = {
         "id": 1,
-        "user_id": None,
         "status": "completed",
         "source_type": "github",
         "source_path": "https://github.com/test/repo",
         "branch": "main",
+        "commit_sha": "abc123",
+        "languages_detected": ["python", "javascript"],
+        "total_files": 10,
+        "files_scanned": 10,
         "total_findings": 5,
         "critical_count": 1,
         "high_count": 2,
         "medium_count": 1,
         "low_count": 1,
+        "error_message": None,
+        "started_at": "2024-01-01T00:00:00",
+        "completed_at": "2024-01-01T00:01:00",
         "created_at": "2024-01-01T00:00:00",
+        "findings": [],
     }
     
     response = ScanResponse(**data)

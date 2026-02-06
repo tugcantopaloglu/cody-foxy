@@ -25,7 +25,7 @@ export function GitHubScanner() {
 
     setIsScanning(true)
     try {
-      const scan = await scanGitHubRepo(repoUrl, branch, true)
+      const scan = await scanGitHubRepo(repoUrl, branch, true) as { id: number }
       setCurrentScan(scan as any)
       toast({ title: "Scan started", description: "Analyzing repository..." })
       router.push(`/scan/${scan.id}`)
