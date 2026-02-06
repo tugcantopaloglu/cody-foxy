@@ -4,6 +4,7 @@
 
 Find vulnerabilities before they find you. Cody Foxy scans your code for security issues and uses AI to explain vulnerabilities and suggest fixes.
 
+[![CI](https://github.com/tugcantopaloglu/cody-foxy/actions/workflows/ci.yml/badge.svg)](https://github.com/tugcantopaloglu/cody-foxy/actions/workflows/ci.yml)
 ![Cody Foxy](https://img.shields.io/badge/Security-Scanner-orange?style=for-the-badge&logo=shield)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python)
