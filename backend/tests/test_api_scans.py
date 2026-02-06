@@ -24,11 +24,21 @@ def sample_scan_data():
         "status": "pending",
         "source_type": "upload",
         "source_path": "test.zip",
+        "branch": None,
+        "commit_sha": None,
+        "languages_detected": [],
+        "total_files": 0,
+        "files_scanned": 0,
         "total_findings": 0,
         "critical_count": 0,
         "high_count": 0,
         "medium_count": 0,
         "low_count": 0,
+        "error_message": None,
+        "started_at": None,
+        "completed_at": None,
+        "created_at": "2024-01-01T00:00:00",
+        "findings": [],
     }
 
 
