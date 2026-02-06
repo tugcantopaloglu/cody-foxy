@@ -28,7 +28,7 @@ def test_build_prompt(analyzer, sample_finding):
     prompt = analyzer._build_prompt(sample_finding)
     
     assert "Eval Injection" in prompt
-    assert "critical" in prompt.upper()
+    assert "critical" in prompt.lower()
     assert "app.py" in prompt
     assert "eval(user_input)" in prompt
     assert "CWE-94" in prompt

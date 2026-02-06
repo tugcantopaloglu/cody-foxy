@@ -32,6 +32,7 @@ export interface Scan {
   created_at: string
   started_at?: string
   completed_at?: string
+  error_message?: string
   findings: Finding[]
 }
 
