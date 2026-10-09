@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 import git
+from urllib.parse import urlsplit
+import re
 from ..core.config import settings
 
 
@@ -66,10 +68,15 @@ class GitHubService:
             return response.json()
 
     async def clone_repo(self, repo_url: str, branch: str = "main") -> str:
+        parsed = urlsplit(repo_url)
+        if (parsed.scheme != "https" or parsed.hostname != "github.com"
+                or parsed.username or parsed.password or parsed.query or parsed.fragment
+                or not re.fullmatch(r"/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?", parsed.path)):
+            raise ValueError("Use an HTTPS GitHub repository URL without credentials or query parameters")
         temp_dir = tempfile.mkdtemp(prefix="cody_scan_")
         
         clone_url = repo_url
-        if self.access_token and "github.com" in repo_url:
+        if self.access_token:
             clone_url = repo_url.replace("https://", f"https://x-access-token:{self.access_token}@")
         
         repo = git.Repo.clone_from(
@@ -78,6 +85,7 @@ class GitHubService:
             branch=branch,
             depth=1,
         )
+        repo.remotes.origin.set_url(repo_url)
         
         return temp_dir
 

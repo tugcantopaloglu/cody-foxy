@@ -1,4 +1,4 @@
-name: Cody Foxy Security Scan
+name: Security Scan
 
 on:
   push:
@@ -6,85 +6,31 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      enable_ai:
-        description: 'Enable AI analysis'
-        type: boolean
-        default: true
+
+permissions:
+  contents: read
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11'
-
-      - name: Install Semgrep and Bandit
-        run: pip install semgrep bandit
-
-      - name: Run Semgrep scan
-        run: |
-          semgrep scan \
-            --config p/security-audit \
-            --config p/secrets \
-            --config p/owasp-top-ten \
-            --sarif \
-            --output results.sarif \
-            . || true
-
-      - name: Run Bandit scan (Python)
-        run: |
-          bandit -r . -f sarif -o bandit.sarif --exit-zero || true
-
-      - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Install security tools
+        run: pip install semgrep bandit==1.9.4
+      - name: Generate Semgrep report
+        run: semgrep scan --config p/security-audit --config p/secrets --sarif --output results.sarif backend/app frontend/src
+      - name: Check high severity Python findings
+        run: bandit -r backend/app -lll -f json -o bandit-report.json
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          sarif_file: results.sarif
-        continue-on-error: true
-
-      - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: bandit.sarif
-          category: bandit
-        continue-on-error: true
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let sarif;
-            try {
-              sarif = JSON.parse(fs.readFileSync('results.sarif', 'utf8'));
-            } catch (e) {
-              return;
-            }
-            
-            const results = sarif.runs?.[0]?.results || [];
-            const critical = results.filter(r => r.level === 'error').length;
-            const warnings = results.filter(r => r.level === 'warning').length;
-            
-            const body = `## 🦊 Cody Foxy Security Scan Results
-            
-            | Severity | Count |
-            |----------|-------|
-            | 🔴 Critical/High | ${critical} |
-            | 🟡 Medium | ${warnings} |
-            | 🟢 Low | ${results.length - critical - warnings} |
-            
-            **Total Issues:** ${results.length}
-            
-            View full results in the Security tab.`;
-            
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body
-            });
+          name: security-reports
+          path: |
+            results.sarif
+            bandit-report.json
+          if-no-files-found: error

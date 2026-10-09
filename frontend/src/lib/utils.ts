@@ -6,10 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date) {
+  const parsedDate = new Date(date)
+  if (Number.isNaN(parsedDate.getTime())) return "Unknown date"
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(date))
+  }).format(parsedDate)
 }
 
 export function getSeverityColor(severity: string) {

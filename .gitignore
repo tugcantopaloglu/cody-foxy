@@ -7,6 +7,7 @@ venv/
 
 # Build
 .next/
+next-env.d.ts
 dist/
 build/
 *.egg-info/

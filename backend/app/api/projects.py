@@ -13,6 +13,34 @@ from ..models.project import Team, Project, team_members, project_members
 router = APIRouter()
 
 
+async def _accessible_team(team_id: int, db: AsyncSession, user: dict) -> Team:
+    user_id = int(user["sub"])
+    result = await db.execute(select(Team).where(
+        Team.id == team_id,
+        (Team.owner_id == user_id) | Team.id.in_(
+            select(team_members.c.team_id).where(team_members.c.user_id == user_id)
+        ),
+    ))
+    team = result.scalar_one_or_none()
+    if team is None:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return team
+
+
+async def _accessible_project(project_id: int, db: AsyncSession, user: dict) -> Project:
+    user_id = int(user["sub"])
+    result = await db.execute(select(Project).where(
+        Project.id == project_id,
+        (Project.owner_id == user_id) | Project.id.in_(
+            select(project_members.c.project_id).where(project_members.c.user_id == user_id)
+        ),
+    ))
+    project = result.scalar_one_or_none()
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+
 class TeamCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -131,9 +159,7 @@ async def get_team(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_auth),
 ):
-    team = await db.get(Team, team_id)
-    if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
+    team = await _accessible_team(team_id, db, user)
     
     return TeamResponse.model_validate(team)
 
@@ -182,6 +208,15 @@ async def create_project(
 ):
     slug = slugify(project.name)
     user_id = int(user["sub"])
+    if project.team_id is not None:
+        await _accessible_team(project.team_id, db, user)
+    if project.repository_id is not None:
+        from ..models.repository import Repository
+        result = await db.execute(select(Repository).where(
+            Repository.id == project.repository_id, Repository.user_id == user_id
+        ))
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Repository not found")
     
     new_project = Project(
         name=project.name,
@@ -234,9 +269,7 @@ async def get_project(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_auth),
 ):
-    project = await db.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    project = await _accessible_project(project_id, db, user)
     
     return ProjectResponse.model_validate(project)
 
@@ -249,6 +282,7 @@ async def get_project_stats(
 ):
     from ..models.scan import Scan
     from ..models.project import project_scans
+    await _accessible_project(project_id, db, user)
     
     result = await db.execute(
         select(Scan).join(project_scans).where(

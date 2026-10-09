@@ -27,7 +27,7 @@ describe('Card', () => {
 
   it('applies border and background styles', () => {
     const { container } = render(<Card>Content</Card>)
-    expect(container.firstChild).toHaveClass('rounded-lg')
+    expect(container.firstChild).toHaveClass('rounded-xl')
     expect(container.firstChild).toHaveClass('border')
   })
 

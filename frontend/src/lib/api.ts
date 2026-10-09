@@ -64,14 +64,14 @@ export async function getScans(limit: number = 20, offset: number = 0) {
 }
 
 export async function login(email: string, password: string) {
-  return fetchApi("/auth/login", {
+  return fetchApi<{ access_token: string }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   })
 }
 
 export async function register(email: string, username: string, password: string) {
-  return fetchApi("/auth/register", {
+  return fetchApi<{ access_token: string }>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, username, password }),
   })
